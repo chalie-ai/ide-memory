@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Institutional Memory</title>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+[data-theme="dark"] {
+  --bg-base: #09090b; --bg-surface: #0f0f13; --bg-raised: #18181d;
+  --bg-hover: #1f1f26; --bg-active: #27272e;
+  --border: #27272a; --border-light: #3f3f46;
+  --text-0: #fafafa; --text-1: #d4d4d8; --text-2: #a1a1aa; --text-3: #71717a;
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+  --backdrop: rgba(0,0,0,.6);
+  --search-bg: #111114;
+}
+[data-theme="light"] {
+  --bg-base: #f8f8fa; --bg-surface: #ffffff; --bg-raised: #f4f4f5;
+  --bg-hover: #e9e9ed; --bg-active: #dcdce0;
+  --border: #d4d4d8; --border-light: #e4e4e7;
+  --text-0: #09090b; --text-1: #27272a; --text-2: #52525b; --text-3: #a1a1aa;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --backdrop: rgba(0,0,0,.25);
+  --search-bg: #f4f4f5;
+}
+:root {
+  --c-decision: #3b82f6; --c-rule: #8b5cf6; --c-change: #f59e0b;
+  --c-context: #10b981; --c-incident: #ef4444; --c-note: #6b7280;
+  --sidebar-w: 260px; --detail-w: 520px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --mono: 'SF Mono','Fira Code','Cascadia Code','JetBrains Mono',monospace;
+  --transition: 150ms ease;
+}
+
+html{height:100%}
+body{font-family:var(--font);background:var(--bg-base);color:var(--text-1);
+  height:100%;display:flex;overflow:hidden;font-size:14px;line-height:1.5}
+
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit;color:inherit;background:none;border:none;outline:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100%;
+  background:var(--bg-surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.sidebar-brand{padding:20px 20px 16px;font-size:15px;font-weight:600;
+  color:var(--text-0);letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.sidebar-brand .diamond{width:20px;height:20px;background:var(--c-decision);
+  transform:rotate(45deg);border-radius:3px;flex-shrink:0}
+
+.sidebar-nav{padding:0 12px 12px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;
+  border-radius:6px;color:var(--text-2);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all var(--transition)}
+.nav-item:hover{background:var(--bg-hover);color:var(--text-1)}
+.nav-item.active{background:var(--bg-active);color:var(--text-0)}
+.nav-item svg{width:16px;height:16px;opacity:.7;flex-shrink:0}
+
+.sidebar-divider{height:1px;background:var(--border);margin:4px 16px}
+.sidebar-section{padding:12px 12px 0;flex:1;overflow-y:auto;min-height:0}
+.sidebar-section:last-child{padding-bottom:12px}
+.section-header{display:flex;justify-content:space-between;align-items:center;
+  padding:0 10px 8px;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-3)}
+.section-header .count{font-weight:400;font-variant-numeric:tabular-nums}
+.sidebar-filter{padding:0 4px 8px}
+.sidebar-filter input{width:100%;padding:5px 8px;font-size:12px;
+  background:var(--bg-raised);border:1px solid var(--border);border-radius:5px;
+  color:var(--text-1)}
+.sidebar-filter input::placeholder{color:var(--text-3)}
+.sidebar-filter input:focus{border-color:var(--c-decision)}
+
+.sidebar-list{display:flex;flex-direction:column;gap:1px}
+.sidebar-list-item{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 10px;border-radius:5px;font-size:13px;color:var(--text-2);
+  cursor:pointer;transition:all var(--transition)}
+.sidebar-list-item:hover{background:var(--bg-hover);color:var(--text-1)}
+.sidebar-list-item.active{background:var(--bg-active);color:var(--text-0)}
+.sidebar-list-item .item-count{font-size:12px;color:var(--text-3);
+  font-variant-numeric:tabular-nums}
+.type-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ── Main ──────────────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.main-header{padding:12px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;flex-shrink:0}
+.search-wrapper{flex:1;display:flex;align-items:center;gap:8px;
+  background:var(--search-bg);border:1px solid var(--border);border-radius:8px;
+  padding:0 12px;max-width:640px;transition:border-color var(--transition)}
+.search-wrapper:focus-within{border-color:var(--c-decision)}
+.search-wrapper svg{width:16px;height:16px;color:var(--text-3);flex-shrink:0}
+.search-wrapper input{flex:1;padding:8px 0;font-size:14px}
+.search-wrapper input::placeholder{color:var(--text-3)}
+.search-kbd{font-family:var(--mono);font-size:11px;color:var(--text-3);
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:4px;padding:1px 6px;line-height:1.4}
+.header-actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+.header-btn{padding:8px;border-radius:6px;color:var(--text-2);
+  transition:all var(--transition)}
+.header-btn:hover{background:var(--bg-hover);color:var(--text-0)}
+.header-btn svg{width:18px;height:18px}
+
+.main-content{flex:1;overflow-y:auto;padding:24px}
+
+/* ── Stats Grid ────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg-surface);border:1px solid var(--border);
+  border-radius:10px;padding:16px 20px}
+.stat-value{font-size:28px;font-weight:700;color:var(--text-0);
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.stat-label{font-size:12px;color:var(--text-3);margin-top:2px;font-weight:500}
+
+/* ── Section Headers ───────────────────────────────────────────── */
+.content-section{margin-bottom:32px}
+.content-title{font-size:13px;font-weight:600;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px}
+
+/* ── Memory Cards ──────────────────────────────────────────────── */
+.memory-list{display:flex;flex-direction:column;gap:8px}
+.memory-card{background:var(--bg-surface);border:1px solid var(--border);
+  border-radius:10px;padding:16px 20px;cursor:pointer;
+  transition:all var(--transition)}
+.memory-card:hover{border-color:var(--border-light);background:var(--bg-raised)}
+.memory-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.memory-body{color:var(--text-1);font-size:14px;line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.memory-footer{display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;gap:8px;flex-wrap:wrap}
+.memory-tags{display:flex;gap:4px;flex-wrap:wrap}
+.memory-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-3);margin-left:auto;flex-shrink:0}
+.memory-similarity{font-family:var(--mono);font-size:11px;color:var(--c-decision);
+  background:color-mix(in srgb,var(--c-decision) 12%,transparent);
+  padding:2px 6px;border-radius:4px}
+
+/* ── Badges ────────────────────────────────────────────────────── */
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;
+  white-space:nowrap;letter-spacing:.02em}
+.badge-decision{color:var(--c-decision);background:color-mix(in srgb,var(--c-decision) 14%,transparent)}
+.badge-rule{color:var(--c-rule);background:color-mix(in srgb,var(--c-rule) 14%,transparent)}
+.badge-change{color:var(--c-change);background:color-mix(in srgb,var(--c-change) 14%,transparent)}
+.badge-context{color:var(--c-context);background:color-mix(in srgb,var(--c-context) 14%,transparent)}
+.badge-incident{color:var(--c-incident);background:color-mix(in srgb,var(--c-incident) 14%,transparent)}
+.badge-note{color:var(--c-note);background:color-mix(in srgb,var(--c-note) 14%,transparent)}
+.badge-project{color:var(--text-2);background:var(--bg-raised);border:1px solid var(--border)}
+.tag{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+
+/* ── Project Cards Grid ────────────────────────────────────────── */
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.project-card{background:var(--bg-surface);border:1px solid var(--border);
+  border-radius:10px;padding:20px;cursor:pointer;transition:all var(--transition)}
+.project-card:hover{border-color:var(--border-light);background:var(--bg-raised)}
+.project-card-name{font-size:16px;font-weight:600;color:var(--text-0);margin-bottom:4px}
+.project-card-meta{font-size:12px;color:var(--text-3);margin-bottom:12px}
+.project-type-bar{display:flex;gap:4px;margin-bottom:10px;height:4px;border-radius:2px;overflow:hidden}
+.project-type-bar span{border-radius:2px;min-width:3px}
+.project-type-counts{display:flex;flex-wrap:wrap;gap:8px}
+.project-type-count{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px}
+.project-type-count .dot{width:6px;height:6px;border-radius:2px}
+
+/* ── Timeline ──────────────────────────────────────────────────── */
+.timeline-group{margin-bottom:24px}
+.timeline-date{font-size:12px;font-weight:600;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.04em;padding-bottom:10px;
+  border-bottom:1px solid var(--border);margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center}
+.timeline-count{font-weight:400;font-size:11px;color:var(--text-3)}
+.timeline-item{display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--bg-raised)}
+.timeline-item:last-child{border-bottom:none}
+.timeline-time{font-size:12px;font-family:var(--mono);color:var(--text-3);
+  width:50px;flex-shrink:0;padding-top:1px}
+.timeline-dot{width:8px;height:8px;border-radius:2px;margin-top:5px;flex-shrink:0}
+.timeline-body{flex:1;min-width:0}
+.timeline-body-header{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.timeline-body-project{font-size:12px;color:var(--text-2);font-weight:500}
+.timeline-body-content{font-size:13px;color:var(--text-1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.timeline-body-content:hover{color:var(--text-0)}
+
+/* ── Detail Panel ──────────────────────────────────────────────── */
+.detail-backdrop{position:fixed;inset:0;background:var(--backdrop);
+  opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:90}
+.detail-backdrop.open{opacity:1;pointer-events:auto}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:var(--detail-w);
+  max-width:calc(100vw - 60px);background:var(--bg-surface);
+  border-left:1px solid var(--border);z-index:100;
+  transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;overflow:hidden}
+.detail-panel.open{transform:translateX(0)}
+.detail-header{display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.detail-close{width:32px;height:32px;display:flex;align-items:center;
+  justify-content:center;border-radius:6px;color:var(--text-2);font-size:18px;
+  transition:all var(--transition)}
+.detail-close:hover{background:var(--bg-hover);color:var(--text-0)}
+.detail-body{flex:1;overflow-y:auto;padding:24px}
+.detail-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.detail-content{font-size:15px;line-height:1.7;color:var(--text-1);
+  white-space:pre-wrap;word-break:break-word}
+.detail-meta{margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.detail-meta-row{display:flex;justify-content:space-between;padding:6px 0;
+  font-size:13px}
+.detail-meta-label{color:var(--text-3)}
+.detail-meta-value{color:var(--text-1);text-align:right}
+
+/* ── Pagination ────────────────────────────────────────────────── */
+.pagination{display:flex;justify-content:center;align-items:center;gap:6px;
+  margin-top:20px;padding:8px 0}
+.page-btn{padding:6px 12px;border-radius:6px;font-size:13px;color:var(--text-2);
+  border:1px solid var(--border);cursor:pointer;transition:all var(--transition);
+  background:var(--bg-surface)}
+.page-btn:hover{background:var(--bg-hover);color:var(--text-0)}
+.page-btn.active{background:var(--c-decision);color:#fff;border-color:var(--c-decision)}
+.page-btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+.page-info{font-size:12px;color:var(--text-3);margin:0 8px}
+
+/* ── Active Filters Bar ────────────────────────────────────────── */
+.active-filters{display:flex;align-items:center;gap:8px;padding:0 24px 0;
+  flex-shrink:0;flex-wrap:wrap}
+.active-filters:empty{display:none}
+.filter-chip{display:flex;align-items:center;gap:4px;padding:4px 10px;
+  background:var(--bg-raised);border:1px solid var(--border);border-radius:6px;
+  font-size:12px;color:var(--text-2);cursor:pointer;transition:all var(--transition)}
+.filter-chip:hover{border-color:var(--border-light);color:var(--text-0)}
+.filter-chip .x{color:var(--text-3);margin-left:2px}
+
+/* ── Empty / Loading / Error ───────────────────────────────────── */
+.empty-state{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 20px;text-align:center}
+.empty-icon{font-size:48px;color:var(--text-3);margin-bottom:16px;opacity:.5}
+.empty-state h3{font-size:16px;color:var(--text-1);margin-bottom:6px;font-weight:600}
+.empty-state p{font-size:14px;color:var(--text-3);max-width:400px}
+
+.loading{display:flex;justify-content:center;padding:60px 0}
+.spinner{width:24px;height:24px;border:2px solid var(--border);
+  border-top-color:var(--c-decision);border-radius:50%;
+  animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Project Detail Header ─────────────────────────────────────── */
+.project-header{margin-bottom:24px}
+.project-header h1{font-size:22px;font-weight:700;color:var(--text-0);margin-bottom:4px}
+.project-header-meta{font-size:13px;color:var(--text-3)}
+.project-header-types{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+
+/* ── Source Badge ──────────────────────────────────────────────── */
+.badge-source{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;
+  color:var(--text-2);background:var(--bg-raised);border:1px solid var(--border);
+  font-family:var(--mono);letter-spacing:.02em}
+
+/* ── Scope Pills (affected items) ─────────────────────────────── */
+.scope-section{margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.scope-title{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-3);margin-bottom:8px}
+.scope-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.scope-pill{font-size:11px;font-family:var(--mono);padding:3px 8px;
+  border-radius:5px;background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--text-2);cursor:pointer;transition:all var(--transition)}
+.scope-pill:hover{border-color:var(--c-decision);color:var(--text-0)}
+.scope-pill-service{border-left:3px solid var(--c-context)}
+.scope-pill-file{border-left:3px solid var(--c-change)}
+.scope-pill-module{border-left:3px solid var(--c-rule)}
+
+/* ── Card affected summary ────────────────────────────────────── */
+.card-scope{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.card-scope-item{font-size:10px;font-family:var(--mono);color:var(--text-3);
+  background:var(--bg-raised);padding:1px 5px;border-radius:3px;
+  border:1px solid var(--border)}
+
+/* ── Scope Filter Inputs ──────────────────────────────────────── */
+.scope-filters{display:flex;gap:8px;flex-wrap:wrap;padding:0 24px 8px}
+.scope-filter-input{font-size:12px;padding:4px 10px;
+  background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;
+  color:var(--text-1);width:180px;transition:border-color var(--transition)}
+.scope-filter-input:focus{border-color:var(--c-decision);outline:none}
+.scope-filter-input::placeholder{color:var(--text-3)}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  :root{--detail-w:100vw}
+}
+</style>
+</head>
+
+<body>
+<!-- ── Sidebar ──────────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><div class="diamond"></div>Memory</div>
+
+  <nav class="sidebar-nav" id="main-nav">
+    <a class="nav-item active" data-action="nav" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard</a>
+    <a class="nav-item" data-action="nav" data-view="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search</a>
+    <a class="nav-item" data-action="nav" data-view="timeline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Timeline</a>
+    <a class="nav-item" data-action="nav" data-view="projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      Projects</a>
+  </nav>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section">
+    <div class="section-header"><span>Projects</span><span class="count" id="project-count"></span></div>
+    <div class="sidebar-filter"><input type="text" id="project-filter" placeholder="Filter projects..."></div>
+    <div class="sidebar-list" id="sidebar-projects"></div>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section" style="flex:0">
+    <div class="section-header"><span>Types</span></div>
+    <div class="sidebar-list" id="sidebar-types"></div>
+  </div>
+</aside>
+
+<!-- ── Main ─────────────────────────────────────────────────────── -->
+<main class="main">
+  <header class="main-header">
+    <div class="search-wrapper">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search memories...">
+      <kbd class="search-kbd">/</kbd>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" data-action="toggle-theme" title="Toggle theme" id="theme-btn">
+        <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="active-filters" id="active-filters"></div>
+  <div class="scope-filters" id="scope-filters" style="display:none">
+    <input class="scope-filter-input" id="filter-service" type="text" placeholder="Filter by service...">
+    <input class="scope-filter-input" id="filter-file" type="text" placeholder="Filter by file path...">
+    <input class="scope-filter-input" id="filter-module" type="text" placeholder="Filter by module...">
+  </div>
+  <div class="main-content" id="main-content">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<!-- ── Detail Panel ────────────────────────────────────────────── -->
+<div class="detail-backdrop" id="detail-backdrop"></div>
+<aside class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <span style="font-weight:600;font-size:14px;color:var(--text-2)">Memory Detail</span>
+    <button class="detail-close" data-action="close-detail">&times;</button>
+  </div>
+  <div class="detail-body" id="detail-content"></div>
+</aside>
+
+<script>
+/* ── Helpers ────────────────────────────────────────────────────── */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+function h(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+const TYPE_COLORS = {decision:'var(--c-decision)',rule:'var(--c-rule)',change:'var(--c-change)',
+  context:'var(--c-context)',incident:'var(--c-incident)',note:'var(--c-note)'};
+
+function typeColor(t){return TYPE_COLORS[t]||'var(--text-3)'}
+
+function timeAgo(iso){
+  const s=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(s<60) return 'just now';
+  const m=Math.floor(s/60); if(m<60) return m+'m ago';
+  const hr=Math.floor(m/60); if(hr<24) return hr+'h ago';
+  const d=Math.floor(hr/24); if(d<30) return d+'d ago';
+  const mo=Math.floor(d/30); if(mo<12) return mo+'mo ago';
+  return Math.floor(mo/12)+'y ago';
+}
+
+function formatDate(iso){
+  return new Date(iso).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+function formatTime(iso){return new Date(iso).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})}
+function truncate(s,n){return s.length<=n?s:s.slice(0,n).trimEnd()+'...'}
+
+/* ── State ──────────────────────────────────────────────────────── */
+const SOURCE_LABELS = {
+  agent:'Agent',code_review:'Code Review',incident:'Incident',
+  meeting:'Meeting',inferred:'Inferred',manual:'Manual'
+};
+
+const state = {
+  view:'dashboard', searchQuery:'', filterProject:null, filterType:null,
+  filterService:null, filterFile:null, filterModule:null,
+  page:1, pages:1, total:0,
+  stats:null, projects:[], types:[], services:[], memories:[], searchResults:[],
+  timelineGroups:[], selectedMemory:null,
+};
+
+/* ── API ────────────────────────────────────────────────────────── */
+const API = '/api';
+async function api(path,params={}){
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k,v])=>{if(v!==null&&v!==undefined&&v!=='')q.set(k,v)});
+  const qs = q.toString();
+  const res = await fetch(`${API}${path}${qs?'?'+qs:''}`);
+  if(!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+/* ── Renderers ──────────────────────────────────────────────────── */
+function renderMemoryCard(m, showSimilarity=false, rank=0){
+  const tags = (m.tags||[]).map(t=>`<span class="tag">#${h(t)}</span>`).join('');
+  const sim = showSimilarity && rank
+    ? `<span class="memory-similarity">#${rank}</span>`
+    : '';
+  const srcLabel = SOURCE_LABELS[m.source] || m.source || '';
+  const srcBadge = srcLabel ? `<span class="badge-source">${h(srcLabel)}</span>` : '';
+  const confBadge = m.confidence && m.confidence !== 'medium'
+    ? `<span class="badge-source" style="border-color:${m.confidence==='high'?'var(--c-context)':'var(--c-change)'}">${h(m.confidence)} confidence</span>`
+    : '';
+  const scopeItems = [
+    ...(m.affected_services||[]).map(s=>`<span class="card-scope-item scope-pill-service">${h(s)}</span>`),
+    ...(m.affected_modules||[]).map(s=>`<span class="card-scope-item scope-pill-module">${h(s)}</span>`),
+    ...(m.affected_files||[]).slice(0,3).map(s=>`<span class="card-scope-item scope-pill-file">${h(s)}</span>`),
+  ];
+  const moreFiles = (m.affected_files||[]).length > 3 ? `<span class="card-scope-item">+${m.affected_files.length-3} files</span>` : '';
+  const scopeHtml = scopeItems.length ? `<div class="card-scope">${scopeItems.join('')}${moreFiles}</div>` : '';
+  return `
+    <div class="memory-card" data-action="view-memory" data-id="${m.id}">
+      <div class="memory-header">
+        <span class="badge badge-${m.memory_type}">${h(m.memory_type)}</span>
+        <span class="badge badge-project" data-action="filter-project" data-project="${h(m.project)}">${h(m.project)}</span>
+        ${srcBadge}
+        ${confBadge}
+        <span style="margin-left:auto;font-size:12px;color:var(--text-3)">${timeAgo(m.created_at)}</span>
+      </div>
+      <div class="memory-body">${h(m.content)}</div>
+      ${scopeHtml}
+      <div class="memory-footer">
+        <div class="memory-tags">${tags}</div>
+        <div class="memory-meta">
+          ${m.repo?`<span style="font-family:var(--mono);font-size:11px">${h(m.repo)}${m.branch_name?':'+h(m.branch_name):''}</span>`:''}
+          ${m.author&&m.author!=='unknown'?`<span>by ${h(m.author)}</span>`:''}
+          ${sim}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderPagination(){
+  if(state.pages<=1) return '';
+  let btns = '';
+  btns += `<button class="page-btn" data-action="page" data-page="${state.page-1}" ${state.page<=1?'disabled':''}>&#8249;</button>`;
+  const start = Math.max(1,state.page-2), end = Math.min(state.pages,state.page+2);
+  if(start>1) btns += `<button class="page-btn" data-action="page" data-page="1">1</button>`;
+  if(start>2) btns += `<span class="page-info">...</span>`;
+  for(let i=start;i<=end;i++) btns += `<button class="page-btn${i===state.page?' active':''}" data-action="page" data-page="${i}">${i}</button>`;
+  if(end<state.pages-1) btns += `<span class="page-info">...</span>`;
+  if(end<state.pages) btns += `<button class="page-btn" data-action="page" data-page="${state.pages}">${state.pages}</button>`;
+  btns += `<button class="page-btn" data-action="page" data-page="${state.page+1}" ${state.page>=state.pages?'disabled':''}>&#8250;</button>`;
+  btns += `<span class="page-info">${state.total} total</span>`;
+  return `<div class="pagination">${btns}</div>`;
+}
+
+function renderDashboard(s){
+  const recent = (s.recent||[]).map(m=>renderMemoryCard(m)).join('');
+  return `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${s.total_memories}</div><div class="stat-label">Total Memories</div></div>
+      <div class="stat-card"><div class="stat-value">${s.total_projects}</div><div class="stat-label">Projects</div></div>
+      <div class="stat-card"><div class="stat-value">${s.memories_this_week}</div><div class="stat-label">This Week</div></div>
+      <div class="stat-card"><div class="stat-value">${s.memories_today}</div><div class="stat-label">Today</div></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="page-btn" data-action="export-all" style="font-size:12px">Export All Memories</button>
+    </div>
+    <div class="content-section">
+      <div class="content-title">Recent Memories</div>
+      ${recent?`<div class="memory-list">${recent}</div>`
+        :`<div class="empty-state"><div class="empty-icon">&#9671;</div><h3>No memories yet</h3>
+          <p>Memories will appear here as your agents store decisions, rules, and context through the MCP tools.</p></div>`}
+    </div>`;
+}
+
+function renderSearchResults(results){
+  if(!state.searchQuery) return `<div class="empty-state"><div class="empty-icon">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div><h3>Search your institutional memory</h3>
+    <p>Use natural language to find decisions, rules, changes, and context across all projects.</p></div>`;
+  if(!results.length) return `<div class="empty-state"><div class="empty-icon">&#8709;</div>
+    <h3>No results</h3><p>No memories matched "${h(state.searchQuery)}". Try different terms or broaden your filters.</p></div>`;
+  return `<div class="content-section"><div class="content-title">${results.length} result${results.length!==1?'s':''}</div>
+    <div class="memory-list">${results.map((m,i)=>renderMemoryCard(m,true,i+1)).join('')}</div></div>`;
+}
+
+function renderTimeline(groups){
+  if(!groups.length) return `<div class="empty-state"><div class="empty-icon">&#9201;</div>
+    <h3>No memories in this range</h3><p>Adjust your filters to see the timeline.</p></div>`;
+  return groups.map(g=>{
+    const items = g.memories.map(m=>`
+      <div class="timeline-item" data-action="view-memory" data-id="${m.id}">
+        <span class="timeline-time">${formatTime(m.created_at)}</span>
+        <div class="timeline-dot" style="background:${typeColor(m.memory_type)}"></div>
+        <div class="timeline-body">
+          <div class="timeline-body-header">
+            <span class="badge badge-${m.memory_type}" style="font-size:10px;padding:1px 5px">${h(m.memory_type)}</span>
+            <span class="timeline-body-project">${h(m.project)}</span>
+          </div>
+          <div class="timeline-body-content">${h(truncate(m.content,120))}</div>
+        </div>
+      </div>`).join('');
+    return `<div class="timeline-group">
+      <div class="timeline-date"><span>${formatDate(g.date)}</span><span class="timeline-count">${g.memories.length} memor${g.memories.length!==1?'ies':'y'}</span></div>
+      ${items}</div>`;
+  }).join('') + renderPagination();
+}
+
+function renderProjects(projects){
+  if(!projects.length) return `<div class="empty-state"><div class="empty-icon">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+    </div><h3>No projects yet</h3><p>Projects will appear here once memories are stored.</p></div>`;
+  return `<div class="content-section"><div class="content-title">All Projects</div>
+    <div class="projects-grid">${projects.map(p=>{
+      const tc = p.type_counts||{};
+      const total = p.count;
+      const types = ['decision','rule','change','context','incident','note'];
+      const bars = types.filter(t=>tc[t]).map(t=>`<span style="flex:${tc[t]};background:${typeColor(t)}"></span>`).join('');
+      const counts = types.filter(t=>tc[t]).map(t=>`<span class="project-type-count"><span class="dot" style="background:${typeColor(t)}"></span>${tc[t]} ${t}s</span>`).join('');
+      return `<div class="project-card" data-action="view-project" data-project="${h(p.name)}">
+        <div class="project-card-name">${h(p.name)}</div>
+        <div class="project-card-meta">${total} memories &middot; last updated ${timeAgo(p.latest_at)}</div>
+        <div class="project-type-bar">${bars}</div>
+        <div class="project-type-counts">${counts}</div>
+      </div>`;
+    }).join('')}</div></div>`;
+}
+
+function renderProjectDetail(name, memories, total){
+  const cards = memories.map(m=>renderMemoryCard(m)).join('');
+  return `<div class="project-header">
+      <h1>${h(name)}</h1>
+      <div class="project-header-meta">${total} memories</div>
+    </div>
+    <div class="memory-list">${cards||'<div class="empty-state"><div class="empty-icon">&#9671;</div><h3>No memories</h3><p>This project has no memories yet.</p></div>'}</div>
+    ${renderPagination()}`;
+}
+
+function renderDetail(m){
+  const tags = (m.tags||[]).map(t=>`<span class="tag">#${h(t)}</span>`).join(' ');
+  const srcLabel = SOURCE_LABELS[m.source] || m.source || 'unknown';
+  const srcRef = m.source_ref ? `<a href="${h(m.source_ref)}" target="_blank" rel="noopener" style="color:var(--c-decision);font-family:var(--mono);font-size:11px;word-break:break-all">${h(m.source_ref)}</a>` : '';
+
+  const createdDate = new Date(m.created_at);
+  const daysSinceCreated = Math.floor((Date.now() - createdDate.getTime()) / (1000*60*60*24));
+  const isStale = !m.last_validated_at && daysSinceCreated > 90;
+  const staleWarning = isStale ? `<div style="background:color-mix(in srgb,var(--c-change) 12%,transparent);border:1px solid var(--c-change);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--c-change)">This memory has not been validated and is ${daysSinceCreated} days old. Consider reviewing it for accuracy.</div>` : '';
+
+  const svcPills = (m.affected_services||[]).map(s=>`<span class="scope-pill scope-pill-service" data-action="scope-filter" data-scope="service" data-value="${h(s)}">${h(s)}</span>`).join('');
+  const filePills = (m.affected_files||[]).map(s=>`<span class="scope-pill scope-pill-file" data-action="scope-filter" data-scope="file" data-value="${h(s)}">${h(s)}</span>`).join('');
+  const modPills = (m.affected_modules||[]).map(s=>`<span class="scope-pill scope-pill-module" data-action="scope-filter" data-scope="module" data-value="${h(s)}">${h(s)}</span>`).join('');
+  const hasScope = svcPills || filePills || modPills;
+
+  return `
+    <div class="detail-badges">
+      <span class="badge badge-${m.memory_type}">${h(m.memory_type)}</span>
+      <span class="badge badge-project">${h(m.project)}</span>
+      <span class="badge-source">${h(srcLabel)}</span>
+    </div>
+    ${staleWarning}
+    <div class="detail-content">${h(m.content)}</div>
+    ${tags?`<div style="margin-top:16px">${tags}</div>`:''}
+    ${hasScope?`
+    <div class="scope-section">
+      ${svcPills?`<div class="scope-title">Affected Services</div><div class="scope-pills">${svcPills}</div>`:''}
+      ${filePills?`<div class="scope-title">Affected Files</div><div class="scope-pills">${filePills}</div>`:''}
+      ${modPills?`<div class="scope-title">Affected Modules</div><div class="scope-pills">${modPills}</div>`:''}
+    </div>`:''}
+    <div class="detail-meta">
+      <div class="detail-meta-row"><span class="detail-meta-label">Source</span><span class="detail-meta-value">${h(srcLabel)}</span></div>
+      ${srcRef?`<div class="detail-meta-row"><span class="detail-meta-label">Source Ref</span><span class="detail-meta-value">${srcRef}</span></div>`:''}
+      <div class="detail-meta-row"><span class="detail-meta-label">Confidence</span><span class="detail-meta-value">${h(m.confidence || 'medium')}</span></div>
+      ${m.last_validated_at ? `<div class="detail-meta-row"><span class="detail-meta-label">Last Validated</span><span class="detail-meta-value">${new Date(m.last_validated_at).toLocaleString()}</span></div>` : ''}
+      <div class="detail-meta-row"><span class="detail-meta-label">Author</span><span class="detail-meta-value">${h(m.author||'unknown')}</span></div>
+      ${m.repo?`<div class="detail-meta-row"><span class="detail-meta-label">Repository</span><span class="detail-meta-value" style="font-family:var(--mono);font-size:12px">${h(m.repo)}</span></div>`:''}
+      ${m.file_path?`<div class="detail-meta-row"><span class="detail-meta-label">File</span><span class="detail-meta-value" style="font-family:var(--mono);font-size:12px">${h(m.file_path)}</span></div>`:''}
+      ${m.branch_name?`<div class="detail-meta-row"><span class="detail-meta-label">Branch</span><span class="detail-meta-value" style="font-family:var(--mono);font-size:12px">${h(m.branch_name)}</span></div>`:''}
+      <div class="detail-meta-row"><span class="detail-meta-label">Created</span><span class="detail-meta-value">${new Date(m.created_at).toLocaleString()}</span></div>
+      <div class="detail-meta-row"><span class="detail-meta-label">Updated</span><span class="detail-meta-value">${new Date(m.updated_at).toLocaleString()}</span></div>
+      <div class="detail-meta-row"><span class="detail-meta-label">ID</span><span class="detail-meta-value" style="font-family:var(--mono);font-size:11px">${m.id}</span></div>
+    </div>`;
+}
+
+/* ── Sidebar Renderers ──────────────────────────────────────────── */
+function renderSidebarProjects(projects, filter=''){
+  const f = filter.toLowerCase();
+  const filtered = f ? projects.filter(p=>p.name.toLowerCase().includes(f)) : projects;
+  $('#sidebar-projects').innerHTML = filtered.map(p=>
+    `<div class="sidebar-list-item${state.filterProject===p.name?' active':''}" data-action="filter-project" data-project="${h(p.name)}">
+      <span>${h(p.name)}</span><span class="item-count">${p.count}</span>
+    </div>`
+  ).join('') || '<div style="padding:8px 10px;font-size:12px;color:var(--text-3)">No matches</div>';
+  $('#project-count').textContent = projects.length;
+}
+
+function renderSidebarTypes(types){
+  $('#sidebar-types').innerHTML = types.map(t=>
+    `<div class="sidebar-list-item${state.filterType===t.name?' active':''}" data-action="filter-type" data-type="${h(t.name)}">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="type-dot" style="background:${typeColor(t.name)}"></div>
+        <span>${h(t.name)}</span>
+      </div>
+      <span class="item-count">${t.count}</span>
+    </div>`
+  ).join('');
+}
+
+function renderActiveFilters(){
+  let chips = '';
+  if(state.filterProject) chips += `<div class="filter-chip" data-action="clear-filter" data-filter="project">Project: ${h(state.filterProject)} <span class="x">&times;</span></div>`;
+  if(state.filterType) chips += `<div class="filter-chip" data-action="clear-filter" data-filter="type">Type: ${h(state.filterType)} <span class="x">&times;</span></div>`;
+  if(state.filterService) chips += `<div class="filter-chip" data-action="clear-filter" data-filter="service">Service: ${h(state.filterService)} <span class="x">&times;</span></div>`;
+  if(state.filterFile) chips += `<div class="filter-chip" data-action="clear-filter" data-filter="file">File: ${h(state.filterFile)} <span class="x">&times;</span></div>`;
+  if(state.filterModule) chips += `<div class="filter-chip" data-action="clear-filter" data-filter="module">Module: ${h(state.filterModule)} <span class="x">&times;</span></div>`;
+  $('#active-filters').innerHTML = chips;
+}
+
+function setActiveNav(view){
+  $$('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.view===view)});
+}
+
+/* ── Navigation ─────────────────────────────────────────────────── */
+let searchDebounce;
+async function navigate(view, opts={}){
+  state.view = view;
+  if(opts.page) state.page = opts.page; else if(!opts.keepPage) state.page = 1;
+  setActiveNav(view);
+  renderActiveFilters();
+  const mc = $('#main-content');
+
+  const scopeParams = {service:state.filterService, file:state.filterFile, module:state.filterModule};
+  const showScope = ['search','browse','timeline','project-detail'].includes(view);
+  $('#scope-filters').style.display = showScope ? 'flex' : 'none';
+
+  try {
+    if(view === 'dashboard'){
+      mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      const s = await api('/stats');
+      state.stats = s;
+      mc.innerHTML = renderDashboard(s);
+    }
+    else if(view === 'search'){
+      if(state.searchQuery){
+        mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        const r = await api('/search',{q:state.searchQuery, project:state.filterProject, type:state.filterType, limit:30, ...scopeParams});
+        state.searchResults = r.memories;
+        mc.innerHTML = renderSearchResults(r.memories);
+      } else {
+        mc.innerHTML = renderSearchResults([]);
+      }
+    }
+    else if(view === 'timeline'){
+      mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      const r = await api('/timeline',{project:state.filterProject, type:state.filterType, page:state.page, per_page:40, ...scopeParams});
+      state.timelineGroups = r.groups; state.pages = r.pages; state.total = r.total;
+      mc.innerHTML = renderTimeline(r.groups);
+    }
+    else if(view === 'projects'){
+      mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      const r = await api('/projects');
+      mc.innerHTML = renderProjects(r.projects);
+    }
+    else if(view === 'project-detail'){
+      mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      const r = await api('/memories',{project:state.filterProject, type:state.filterType, page:state.page, per_page:20, ...scopeParams});
+      state.memories = r.memories; state.pages = r.pages; state.total = r.total;
+      mc.innerHTML = renderProjectDetail(state.filterProject, r.memories, r.total);
+    }
+    else if(view === 'browse'){
+      mc.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      const r = await api('/memories',{project:state.filterProject, type:state.filterType, page:state.page, per_page:20, ...scopeParams});
+      state.memories = r.memories; state.pages = r.pages; state.total = r.total;
+      const cards = r.memories.map(m=>renderMemoryCard(m)).join('');
+      mc.innerHTML = `<div class="content-section"><div class="content-title">All Memories</div>
+        <div class="memory-list">${cards||'<div class="empty-state"><div class="empty-icon">&#9671;</div><h3>No memories found</h3></div>'}</div></div>` + renderPagination();
+    }
+  } catch(e) {
+    console.error(e);
+    mc.innerHTML = `<div class="empty-state"><div class="empty-icon">!</div><h3>Something went wrong</h3>
+      <p>${h(e.message)}</p></div>`;
+  }
+  clearCardFocus();
+  pushURL();
+}
+
+function openDetail(m){
+  state.selectedMemory = m;
+  $('#detail-content').innerHTML = renderDetail(m);
+  $('#detail-panel').classList.add('open');
+  $('#detail-backdrop').classList.add('open');
+  pushURL();
+}
+function closeDetail(){
+  state.selectedMemory = null;
+  $('#detail-panel').classList.remove('open');
+  $('#detail-backdrop').classList.remove('open');
+  pushURL();
+}
+
+/* ── URL State (shareable links) ───────────────────────────────── */
+function pushURL(){
+  const p = new URLSearchParams();
+  if(state.view && state.view!=='dashboard') p.set('v', state.view);
+  if(state.searchQuery) p.set('q', state.searchQuery);
+  if(state.filterProject) p.set('project', state.filterProject);
+  if(state.filterType) p.set('type', state.filterType);
+  if(state.filterService) p.set('service', state.filterService);
+  if(state.filterFile) p.set('file', state.filterFile);
+  if(state.filterModule) p.set('module', state.filterModule);
+  if(state.page > 1) p.set('page', state.page);
+  if(state.selectedMemory) p.set('mem', state.selectedMemory.id);
+  const qs = p.toString();
+  const url = qs ? '?' + qs : location.pathname;
+  history.replaceState(null, '', url);
+}
+function readURL(){
+  const p = new URLSearchParams(location.search);
+  state.view = p.get('v') || 'dashboard';
+  state.searchQuery = p.get('q') || '';
+  state.filterProject = p.get('project') || null;
+  state.filterType = p.get('type') || null;
+  state.filterService = p.get('service') || null;
+  state.filterFile = p.get('file') || null;
+  state.filterModule = p.get('module') || null;
+  state.page = parseInt(p.get('page') || '1');
+  if(state.searchQuery) $('#search-input').value = state.searchQuery;
+  if(state.filterService) $('#filter-service').value = state.filterService;
+  if(state.filterFile) $('#filter-file').value = state.filterFile;
+  if(state.filterModule) $('#filter-module').value = state.filterModule;
+  return p.get('mem');
+}
+
+/* ── Rotating Search Placeholders ──────────────────────────────── */
+const HINT_QUERIES = [
+  'Why did we choose PostgreSQL for the user service?',
+  'What are the rules for database migrations?',
+  'Authentication architecture decisions',
+  'Recent infrastructure changes across all projects',
+  'Incidents related to rate limiting',
+  'What was decided about the API versioning strategy?',
+  'Breaking changes in the last month',
+  'gRPC vs REST decision context',
+];
+let hintIdx = 0;
+function rotateHint(){
+  const input = $('#search-input');
+  if(document.activeElement === input || input.value) return;
+  input.setAttribute('placeholder', HINT_QUERIES[hintIdx % HINT_QUERIES.length]);
+  hintIdx++;
+}
+
+/* ── j/k keyboard nav for memory lists ─────────────────────────── */
+let focusedCardIdx = -1;
+function getVisibleCards(){return [...$$('.memory-card, .timeline-item[data-id]')]}
+function focusCard(idx){
+  const cards = getVisibleCards();
+  if(!cards.length) return;
+  cards.forEach(c=>c.style.outline='none');
+  focusedCardIdx = Math.max(0, Math.min(idx, cards.length - 1));
+  const card = cards[focusedCardIdx];
+  card.style.outline='2px solid var(--c-decision)';
+  card.style.outlineOffset='-2px';
+  card.style.borderRadius='10px';
+  card.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function clearCardFocus(){
+  focusedCardIdx = -1;
+  getVisibleCards().forEach(c=>c.style.outline='none');
+}
+
+/* ── Shortcuts overlay ─────────────────────────────────────────── */
+function toggleShortcuts(){
+  let overlay = $('#shortcuts-overlay');
+  if(overlay){overlay.remove();return}
+  overlay = document.createElement('div');
+  overlay.id = 'shortcuts-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:var(--backdrop);z-index:200;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `<div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:24px 32px;max-width:420px;width:90%">
+    <h3 style="font-size:16px;color:var(--text-0);margin-bottom:16px">Keyboard Shortcuts</h3>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px">
+      <kbd style="font-family:var(--mono);background:var(--bg-raised);border:1px solid var(--border);padding:2px 6px;border-radius:4px;text-align:center">/</kbd><span style="color:var(--text-1)">Focus search</span>
+      <kbd style="font-family:var(--mono);background:var(--bg-raised);border:1px solid var(--border);padding:2px 6px;border-radius:4px;text-align:center">j / k</kbd><span style="color:var(--text-1)">Navigate memory list</span>
+      <kbd style="font-family:var(--mono);background:var(--bg-raised);border:1px solid var(--border);padding:2px 6px;border-radius:4px;text-align:center">Enter</kbd><span style="color:var(--text-1)">Open selected memory</span>
+      <kbd style="font-family:var(--mono);background:var(--bg-raised);border:1px solid var(--border);padding:2px 6px;border-radius:4px;text-align:center">Esc</kbd><span style="color:var(--text-1)">Close panel / blur search</span>
+      <kbd style="font-family:var(--mono);background:var(--bg-raised);border:1px solid var(--border);padding:2px 6px;border-radius:4px;text-align:center">?</kbd><span style="color:var(--text-1)">This help</span>
+    </div>
+    <p style="margin-top:16px;font-size:12px;color:var(--text-3)">Press Escape or click outside to close</p>
+  </div>`;
+  overlay.addEventListener('click', e=>{if(e.target===overlay) overlay.remove()});
+  document.body.appendChild(overlay);
+}
+
+/* ── Event Handling ─────────────────────────────────────────────── */
+document.addEventListener('click', async e=>{
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  const action = el.dataset.action;
+
+  if(action === 'nav'){
+    state.filterProject = null;
+    state.filterType = null;
+    clearCardFocus();
+    navigate(el.dataset.view);
+  }
+  else if(action === 'view-memory'){
+    const id = el.dataset.id;
+    try{
+      const r = await api(`/memories/${id}`);
+      openDetail(r.memory);
+    }catch(err){
+      const cached = [...(state.memories||[]),...(state.searchResults||[]),...(state.stats?.recent||[])].find(m=>m.id===id);
+      if(cached) openDetail(cached);
+    }
+  }
+  else if(action === 'filter-project'){
+    e.stopPropagation();
+    const p = el.dataset.project;
+    if(state.filterProject === p){state.filterProject = null; navigate(state.view === 'project-detail'?'dashboard':state.view)}
+    else {state.filterProject = p; navigate('project-detail')}
+    renderSidebarProjects(state.projects, $('#project-filter').value);
+    renderActiveFilters();
+  }
+  else if(action === 'filter-type'){
+    const t = el.dataset.type;
+    state.filterType = state.filterType === t ? null : t;
+    renderSidebarTypes(state.types);
+    renderActiveFilters();
+    navigate(state.view==='dashboard'?'browse':state.view);
+  }
+  else if(action === 'view-project'){
+    state.filterProject = el.dataset.project;
+    navigate('project-detail');
+    renderSidebarProjects(state.projects, $('#project-filter').value);
+    renderActiveFilters();
+  }
+  else if(action === 'scope-filter'){
+    const scope = el.dataset.scope;
+    const val = el.dataset.value;
+    if(scope==='service'){state.filterService=val;$('#filter-service').value=val}
+    if(scope==='file'){state.filterFile=val;$('#filter-file').value=val}
+    if(scope==='module'){state.filterModule=val;$('#filter-module').value=val}
+    closeDetail();
+    renderActiveFilters();
+    navigate('browse');
+  }
+  else if(action === 'clear-filter'){
+    const f = el.dataset.filter;
+    if(f==='project'){state.filterProject=null;renderSidebarProjects(state.projects,$('#project-filter').value)}
+    if(f==='type'){state.filterType=null;renderSidebarTypes(state.types)}
+    if(f==='service'){state.filterService=null;$('#filter-service').value=''}
+    if(f==='file'){state.filterFile=null;$('#filter-file').value=''}
+    if(f==='module'){state.filterModule=null;$('#filter-module').value=''}
+    renderActiveFilters();
+    navigate(state.view==='project-detail'?'dashboard':state.view);
+  }
+  else if(action === 'close-detail') closeDetail();
+  else if(action === 'toggle-theme'){
+    const html = document.documentElement;
+    const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    html.dataset.theme = next;
+    localStorage.setItem('theme', next);
+  }
+  else if(action === 'export-all'){
+    try {
+      const r = await api('/export', {project: state.filterProject});
+      const blob = new Blob([JSON.stringify(r, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `memories-export-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { console.error('Export failed', e) }
+  }
+  else if(action === 'page'){
+    const p = parseInt(el.dataset.page);
+    if(p>=1 && p<=state.pages){state.page=p; navigate(state.view,{keepPage:true})}
+  }
+});
+
+$('#detail-backdrop').addEventListener('click', closeDetail);
+
+// Search input
+const searchInput = $('#search-input');
+searchInput.addEventListener('input', e=>{
+  clearTimeout(searchDebounce);
+  const q = e.target.value.trim();
+  state.searchQuery = q;
+  searchDebounce = setTimeout(()=>{
+    if(q) navigate('search');
+    else if(state.view==='search') navigate('dashboard');
+  }, 300);
+});
+searchInput.addEventListener('focus', ()=>{ searchInput.setAttribute('placeholder','Search memories...') });
+searchInput.addEventListener('blur', ()=>{ rotateHint() });
+
+// Project filter
+$('#project-filter').addEventListener('input', e=>{
+  renderSidebarProjects(state.projects, e.target.value);
+});
+
+// Scope filters (service, file, module)
+let scopeDebounce;
+['service','file','module'].forEach(field=>{
+  $(`#filter-${field}`).addEventListener('input', e=>{
+    clearTimeout(scopeDebounce);
+    const val = e.target.value.trim();
+    state[`filter${field[0].toUpperCase()+field.slice(1)}`] = val || null;
+    scopeDebounce = setTimeout(()=>{
+      renderActiveFilters();
+      navigate(state.view==='dashboard'?'browse':state.view);
+    }, 400);
+  });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e=>{
+  const tag = document.activeElement?.tagName;
+  const inInput = tag==='INPUT' || tag==='TEXTAREA';
+
+  if(e.key==='/' && !inInput){e.preventDefault();searchInput.focus();return}
+  if(e.key==='Escape'){
+    const so = $('#shortcuts-overlay');
+    if(so){so.remove();return}
+    if(state.selectedMemory){closeDetail();return}
+    if(document.activeElement===searchInput){searchInput.blur();return}
+    return;
+  }
+  if(e.key==='?' && !inInput){e.preventDefault();toggleShortcuts();return}
+
+  // j/k navigation
+  if(!inInput && !state.selectedMemory){
+    if(e.key==='j'){e.preventDefault();focusCard(focusedCardIdx+1);return}
+    if(e.key==='k'){e.preventDefault();focusCard(focusedCardIdx-1);return}
+    if(e.key==='Enter' && focusedCardIdx>=0){
+      e.preventDefault();
+      const cards=getVisibleCards();
+      if(cards[focusedCardIdx]) cards[focusedCardIdx].click();
+      return;
+    }
+  }
+});
+
+/* ── Init ───────────────────────────────────────────────────────── */
+(async function init(){
+  // Restore theme
+  const saved = localStorage.getItem('theme');
+  if(saved) document.documentElement.dataset.theme = saved;
+
+  // Load sidebar data
+  try{
+    const [pRes, tRes] = await Promise.all([api('/projects'), api('/types')]);
+    state.projects = pRes.projects;
+    state.types = tRes.types;
+    renderSidebarProjects(state.projects);
+    renderSidebarTypes(state.types);
+  }catch(e){console.error('Failed to load sidebar data', e)}
+
+  // Restore state from URL if present
+  const memId = readURL();
+  renderActiveFilters();
+  renderSidebarProjects(state.projects);
+  renderSidebarTypes(state.types);
+  navigate(state.view, {keepPage:true});
+  if(memId){try{const r=await api(`/memories/${memId}`);openDetail(r.memory)}catch(e){}}
+
+  // Start rotating search hints
+  rotateHint();
+  setInterval(rotateHint, 4000);
+})();
+</script>
+</body>
+</html>
