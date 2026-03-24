@@ -37,7 +37,7 @@ cd ide-memory
 Quick setup (MCP connection for all projects):
 
 ```bash
-claude mcp add --scope user --transport http memory http://localhost:8080/sse
+claude mcp add --scope user --transport sse memory http://localhost:8080/sse
 ```
 
 For the full plugin with auto-triggering skills, see [`docs/SETUP.md`](docs/SETUP.md).

@@ -144,13 +144,13 @@ There are two setup levels. **Quick setup** gives you the MCP tools; **Full plug
 Add the MCP server globally so it's available in all Claude Code sessions:
 
 ```bash
-claude mcp add --scope user --transport http memory <MCP_URL>
+claude mcp add --scope user --transport sse memory <MCP_URL>
 ```
 
 For example, with a local instance:
 
 ```bash
-claude mcp add --scope user --transport http memory http://localhost:8080/sse
+claude mcp add --scope user --transport sse memory http://localhost:8080/sse
 ```
 
 **Verify it works:**

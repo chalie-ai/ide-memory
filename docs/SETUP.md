@@ -25,7 +25,7 @@ curl http://localhost:3000/health
 **Quick setup** — add the MCP server globally (applies to all projects):
 
 ```bash
-claude mcp add --scope user --transport http memory http://localhost:8080/sse
+claude mcp add --scope user --transport sse memory http://localhost:8080/sse
 ```
 
 This gives you the MCP tools (`store_memory`, `fetch_memory`, etc.) in all Claude Code sessions. For auto-triggering behavior, drop `docs/CLAUDE.md` into your project roots.
@@ -93,7 +93,7 @@ Add to your MCP configuration:
 **Claude Code** (global, applies to all projects):
 
 ```bash
-claude mcp add --scope user --transport http memory http://localhost:8080/sse
+claude mcp add --scope user --transport sse memory http://localhost:8080/sse
 ```
 
 Or for a single project, create `.mcp.json` in the project root:
@@ -226,4 +226,4 @@ docker exec ide-memory /app/scripts/backup.sh restore /app/backups/<file>.dump
 
 **Skills not triggering (Claude Code)**: The plugin must be installed via the marketplace system, not by copying files. Run `/plugin install ide-memory@chalie-ai` inside Claude Code after registering the marketplace in `settings.json`. See Option A above.
 
-**MCP tools not available (Claude Code)**: Verify with `claude mcp list` — the `memory` server should appear. If not, run `claude mcp add --scope user --transport http memory http://localhost:8080/sse`.
+**MCP tools not available (Claude Code)**: Verify with `claude mcp list` — the `memory` server should appear. If not, run `claude mcp add --scope user --transport sse memory http://localhost:8080/sse`.
