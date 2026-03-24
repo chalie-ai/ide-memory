@@ -20,19 +20,35 @@ curl http://localhost:3000/health
 
 ## 2. Connect your IDE
 
-### Option A: Install the plugin (recommended)
-
-Copy the `docs/plugin/` directory into your Claude Code plugins directory:
+### Option A: Claude Code (plugin with auto-triggering skills)
 
 ```bash
 cp -r docs/plugin ~/.claude/plugins/ide-memory
 ```
 
-This gives you:
-- MCP connection to the memory server
-- **Auto-triggering skills** — Claude will automatically fetch context before tasks and store decisions after significant work, without you having to ask
+This gives you the MCP connection **plus** two auto-triggering skills — Claude will automatically fetch context before tasks and store decisions after significant work, without you having to ask.
 
-### Option B: MCP-only (any IDE that supports MCP)
+### Option B: Cursor (rules with auto-triggering)
+
+Copy the `.cursor` directory into your project root:
+
+```bash
+cp -r docs/cursor/.cursor /path/to/your/project/.cursor
+```
+
+Or install globally (applies to all projects):
+
+```bash
+cp docs/cursor/.cursor/mcp.json ~/.cursor/mcp.json
+mkdir -p ~/.cursor/rules
+cp docs/cursor/.cursor/rules/*.mdc ~/.cursor/rules/
+```
+
+This gives you:
+- MCP connection via `.cursor/mcp.json`
+- Two `alwaysApply: true` rules that instruct the LLM to fetch and store memory automatically
+
+### Option C: MCP-only (any IDE)
 
 Add to your MCP configuration:
 
@@ -86,19 +102,19 @@ Add to your MCP configuration:
 }
 ```
 
-This gives you the MCP tools but **not** the auto-triggering skills. The LLM will have access to the tools but won't automatically use them unless prompted.
+This gives you the MCP tools but **not** auto-triggering. The LLM has access to the tools but won't automatically use them unless prompted.
 
 ## 3. Make the LLM use memory automatically
 
-### With the plugin (Option A)
+### With the plugin/rules (Options A & B)
 
-The plugin includes two skills with aggressive trigger descriptions. Claude will:
+The Claude Code plugin includes skills, and the Cursor rules use `alwaysApply: true` — both instruct the LLM to:
 - **Fetch memory** before starting tasks, investigating bugs, making decisions, reviewing code
 - **Store memory** after decisions, architectural changes, incidents, commits with significant changes
 
-No additional setup needed — the skills trigger automatically based on conversation context.
+No additional setup needed.
 
-### Without the plugin (Option B)
+### With MCP-only (Option C)
 
 Drop the `docs/CLAUDE.md` template into your project root:
 
@@ -108,7 +124,13 @@ cp docs/CLAUDE.md /path/to/your/project/CLAUDE.md
 
 Edit the file to replace `<this-project>` with your project name. Claude Code reads `CLAUDE.md` at the start of every session and will follow the instructions to fetch and store memory.
 
-For other IDEs, add equivalent instructions to your system prompt or rules file (`.cursorrules`, `.windsurfrules`, etc.).
+For Cursor, copy the rules instead:
+
+```bash
+cp docs/cursor/.cursor/rules/*.mdc /path/to/your/project/.cursor/rules/
+```
+
+For other IDEs, add equivalent instructions to your system prompt or rules file (`.windsurfrules`, etc.).
 
 ## 4. Verify it works
 

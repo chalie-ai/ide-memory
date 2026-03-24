@@ -30,13 +30,17 @@ cd ide-memory
 
 ### Claude Code (with auto-triggering skills)
 
-Install the plugin — Claude will automatically fetch context and store decisions:
-
 ```bash
 cp -r docs/plugin ~/.claude/plugins/ide-memory
 ```
 
-See [`docs/SETUP.md`](docs/SETUP.md) for the full setup guide including Cursor, VS Code, and Windsurf.
+### Cursor (with auto-triggering rules)
+
+```bash
+cp -r docs/cursor/.cursor /path/to/your/project/.cursor
+```
+
+See [`docs/SETUP.md`](docs/SETUP.md) for global install, VS Code, Windsurf, and other IDEs.
 
 ### MCP-only (any IDE)
 

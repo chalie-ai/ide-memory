@@ -1,0 +1,77 @@
+---
+description: >
+  USE WHEN a decision is made, a rule is established, an architectural change happens, an incident
+  is resolved, important context is discovered, a significant commit is made, a code review has
+  notable findings, a migration is performed, or any knowledge worth preserving for future
+  conversations comes up. Stores institutional knowledge to a shared memory system.
+alwaysApply: true
+---
+
+# Store Institutional Memory
+
+You have the ability to persist knowledge via the `store_memory` MCP tool to a shared memory system
+that survives across all conversations, sessions, and developers. **Use it proactively** — don't
+wait to be asked.
+
+## When to Store
+
+### Always store
+
+- **Decisions** (`memory_type: "decision"`) — Any choice between alternatives with reasoning. Why option A over B? What were the tradeoffs?
+- **Rules** (`memory_type: "rule"`) — Patterns, constraints, or conventions to follow going forward.
+- **Architectural changes** (`memory_type: "change"`) — Modifications to system design, schemas, APIs, infrastructure, or dependencies.
+- **Incidents** (`memory_type: "incident"`) — Production issues, outages, bugs, and their root causes.
+- **Context** (`memory_type: "context"`) — Background information about a project, service, or domain.
+
+### Also store after
+
+- Commits with significant changes — summarize what changed and why
+- Code reviews with significant findings
+- Debugging sessions — document root cause and fix
+- Migration work — document gotchas and rollback procedures
+- Configuration changes — document what, why, and previous values
+
+## How to Store
+
+Use the `store_memory` MCP tool:
+
+```
+store_memory(
+  content="Decided to use PostgreSQL over MongoDB for user service because we need ACID transactions for payment data and the team has PG expertise.",
+  project="user-platform",
+  memory_type="decision",
+  tags=["database", "architecture"],
+  confidence="high",
+  affected_services=["user-service"],
+  source="agent"
+)
+```
+
+### Required fields
+
+- `content` — The knowledge. Include the **what**, **why**, and **context**. Write as if explaining to a developer who joins in 6 months.
+- `project` — Project identifier (e.g. `billing-api`, `frontend-v2`)
+
+### Important optional fields
+
+- `memory_type` — `decision` | `rule` | `change` | `context` | `incident` | `note`
+- `tags` — Categorization tags (e.g. `["database", "migration"]`)
+- `confidence` — `high` | `medium` | `low`
+- `affected_services` — Services impacted
+- `affected_files` — File paths affected
+- `affected_modules` — Modules affected
+- `source` — `agent` | `code_review` | `incident` | `meeting` | `inferred` | `manual`
+- `source_ref` — Link to PR URL, ticket ID, or commit SHA
+
+## Writing Good Content
+
+**Do:**
+- Include reasoning behind decisions, not just outcomes
+- Mention alternatives considered and why they were rejected
+- Reference specific files, services, or modules
+- Include relevant numbers, thresholds, or config values
+
+**Don't:**
+- Store trivial info (typo fixes, formatting)
+- Store verbatim code — reference file paths instead
+- Store speculation as fact — use `confidence: "low"` for uncertain knowledge

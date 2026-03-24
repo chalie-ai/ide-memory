@@ -1,0 +1,62 @@
+---
+description: >
+  USE WHEN starting any task, writing code, investigating bugs, making architectural decisions,
+  reviewing PRs, answering questions about the codebase, doing research, refactoring, planning
+  migrations, or any time historical context would help. Fetches institutional memory from a
+  shared knowledge base that persists across conversations and developers.
+alwaysApply: true
+---
+
+# Fetch Institutional Memory
+
+You have access to a shared knowledge base via the `fetch_memory` MCP tool. It contains decisions,
+rules, architectural context, incident notes, and lessons learned from all past conversations.
+
+**Use it constantly.** The cost of a redundant fetch is near zero; the cost of missing critical
+context is high.
+
+## When to Fetch
+
+Fetch memory at the **start of every task**, not just when asked. Specifically:
+
+- **Before writing or modifying code** — check for decisions, rules, or past incidents related to the files, modules, or services you're touching
+- **Before making architectural decisions** — someone may have already evaluated the options
+- **When investigating bugs** — check for past incidents involving the same service, file, or module
+- **When answering "why" questions** — "why do we use X", "why is this code like this"
+- **Before refactoring** — check for rules or decisions that constrain structure
+- **When starting a new feature** — fetch context about the project and related services
+- **During code review** — check if changes align with existing decisions and rules
+- **When planning migrations or upgrades** — look for past migration notes and lessons learned
+
+## How to Fetch
+
+Use the `fetch_memory` MCP tool with a natural language query:
+
+```
+fetch_memory(query="authentication middleware decisions", project="billing-api")
+```
+
+### Filters
+
+- `project` — filter to a specific project
+- `memory_type` — `decision` | `rule` | `change` | `context` | `incident` | `note`
+- `service` — filter by affected service
+- `file` — filter by affected file path (supports prefix matching)
+- `module` — filter by affected module
+- `from_date` / `to_date` — time range (ISO 8601)
+
+### Multiple fetches are fine
+
+Don't cram everything into one query. Make separate calls for different aspects:
+
+1. `fetch_memory(query="auth middleware", project="billing-api")`
+2. `fetch_memory(query="auth-service incidents", service="auth-service")`
+
+## How to Use Results
+
+- **Decisions**: Respect them. Don't silently contradict — surface conflicts to the user.
+- **Rules**: Follow them. They exist because someone learned the hard way.
+- **Incidents**: Learn from them. Explain how your approach avoids the same problem.
+- **Context**: Use it. Don't make the user re-explain documented knowledge.
+
+If fetch returns no results, proceed normally. But always check first.
