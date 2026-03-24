@@ -20,13 +20,51 @@ curl http://localhost:3000/health
 
 ## 2. Connect your IDE
 
-### Option A: Claude Code (plugin with auto-triggering skills)
+### Option A: Claude Code (MCP + auto-triggering skills)
+
+**Quick setup** — add the MCP server globally (applies to all projects):
 
 ```bash
-cp -r docs/plugin ~/.claude/plugins/ide-memory
+claude mcp add --scope user --transport http memory http://localhost:8080/sse
 ```
 
-This gives you the MCP connection **plus** two auto-triggering skills — Claude will automatically fetch context before tasks and store decisions after significant work, without you having to ask.
+This gives you the MCP tools (`store_memory`, `fetch_memory`, etc.) in all Claude Code sessions. For auto-triggering behavior, drop `docs/CLAUDE.md` into your project roots.
+
+**Full plugin setup** — includes auto-triggering skills so Claude fetches and stores memory without being asked:
+
+1. Register the marketplace in `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "chalie-ai": {
+      "source": {
+        "source": "github",
+        "repo": "chalie-ai/ide-memory",
+        "path": "docs/plugin"
+      }
+    }
+  }
+}
+```
+
+2. Install the plugin (run inside Claude Code):
+
+```
+/plugin install ide-memory@chalie-ai
+```
+
+3. Enable the plugin in `~/.claude/settings.json`:
+
+```json
+{
+  "enabledPlugins": {
+    "ide-memory@chalie-ai": true
+  }
+}
+```
+
+> **Note:** Simply copying files to `~/.claude/plugins/` does **not** register the plugin. Claude Code discovers plugins through its marketplace system — the `extraKnownMarketplaces` + `/plugin install` flow is required.
 
 ### Option B: Cursor (rules with auto-triggering)
 
@@ -52,15 +90,19 @@ This gives you:
 
 Add to your MCP configuration:
 
-**Claude Code** (`~/.claude/settings.json`):
+**Claude Code** (global, applies to all projects):
+
+```bash
+claude mcp add --scope user --transport http memory http://localhost:8080/sse
+```
+
+Or for a single project, create `.mcp.json` in the project root:
 
 ```json
 {
-  "mcpServers": {
-    "memory": {
-      "type": "sse",
-      "url": "http://localhost:8080/sse"
-    }
+  "memory": {
+    "type": "sse",
+    "url": "http://localhost:8080/sse"
   }
 }
 ```
@@ -182,4 +224,6 @@ docker exec ide-memory /app/scripts/backup.sh restore /app/backups/<file>.dump
 
 **Search is slow on first query**: The embedding model loads on first use (~10-30s). Subsequent queries are fast.
 
-**Skills not triggering**: Verify the plugin is installed: `ls ~/.claude/plugins/ide-memory/.claude-plugin/plugin.json`
+**Skills not triggering (Claude Code)**: The plugin must be installed via the marketplace system, not by copying files. Run `/plugin install ide-memory@chalie-ai` inside Claude Code after registering the marketplace in `settings.json`. See Option A above.
+
+**MCP tools not available (Claude Code)**: Verify with `claude mcp list` — the `memory` server should appear. If not, run `claude mcp add --scope user --transport http memory http://localhost:8080/sse`.

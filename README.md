@@ -32,11 +32,15 @@ cd ide-memory
 
 ## Connecting Your IDE
 
-### Claude Code (with auto-triggering skills)
+### Claude Code
+
+Quick setup (MCP connection for all projects):
 
 ```bash
-cp -r docs/plugin ~/.claude/plugins/ide-memory
+claude mcp add --scope user --transport http memory http://localhost:8080/sse
 ```
+
+For the full plugin with auto-triggering skills, see [`docs/SETUP.md`](docs/SETUP.md).
 
 ### Cursor (with auto-triggering rules)
 

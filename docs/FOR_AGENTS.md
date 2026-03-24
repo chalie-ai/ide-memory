@@ -137,26 +137,77 @@ Then follow the appropriate setup below.
 
 ### IDE: Claude Code
 
-Install the full plugin with auto-triggering skills. The plugin is in this repository at `docs/plugin/`.
+There are two setup levels. **Quick setup** gives you the MCP tools; **Full plugin** adds auto-triggering skills.
 
-**Find the plugin source.** If this repo is cloned locally, use the local path. Otherwise, clone it:
+#### Quick Setup (MCP only — recommended starting point)
 
-```bash
-# If the repo is already cloned, use that path
-# Otherwise:
-git clone --depth 1 https://github.com/chalie-ai/ide-memory.git /tmp/ide-memory
-```
-
-**Install the plugin:**
+Add the MCP server globally so it's available in all Claude Code sessions:
 
 ```bash
-mkdir -p ~/.claude/plugins
-cp -r <REPO_PATH>/docs/plugin ~/.claude/plugins/ide-memory
+claude mcp add --scope user --transport http memory <MCP_URL>
 ```
 
-**If the user is using a non-default MCP URL**, update the `.mcp.json`:
+For example, with a local instance:
 
-Edit `~/.claude/plugins/ide-memory/.mcp.json` and replace the URL:
+```bash
+claude mcp add --scope user --transport http memory http://localhost:8080/sse
+```
+
+**Verify it works:**
+
+```bash
+claude mcp list
+```
+
+The `memory` server should appear in the output.
+
+**Add auto-triggering behavior** — copy the `CLAUDE.md` template into the user's project roots:
+
+```bash
+cp <REPO_PATH>/docs/CLAUDE.md /path/to/project/CLAUDE.md
+```
+
+Edit the file to replace `<this-project>` with the actual project name. Claude Code reads `CLAUDE.md` at the start of every session and will follow the instructions to fetch and store memory automatically.
+
+#### Full Plugin (MCP + auto-triggering skills)
+
+> **Important:** Simply copying files to `~/.claude/plugins/` does NOT register a plugin. Claude Code discovers plugins through its marketplace system. You must use the `extraKnownMarketplaces` + `/plugin install` flow.
+
+**Step 1 — Register the marketplace.** Read the user's `~/.claude/settings.json` and add the `extraKnownMarketplaces` entry (merge with existing content, don't overwrite):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "chalie-ai": {
+      "source": {
+        "source": "github",
+        "repo": "chalie-ai/ide-memory",
+        "path": "docs/plugin"
+      }
+    }
+  }
+}
+```
+
+**Step 2 — Install the plugin.** Tell the user to run this inside Claude Code:
+
+```
+/plugin install ide-memory@chalie-ai
+```
+
+Or from the CLI:
+
+```bash
+claude plugin install ide-memory@chalie-ai --scope user
+```
+
+**Step 3 — Update MCP URL** (if using a non-default URL). After plugin installation, the MCP URL in the plugin defaults to `http://localhost:8080/sse`. If the user is connecting to a hosted instance, they need to update the MCP URL. Check where the plugin was installed:
+
+```bash
+cat ~/.claude/plugins/installed_plugins.json
+```
+
+Find the `installPath` for `ide-memory@chalie-ai` and edit the `.mcp.json` inside it:
 
 ```json
 {
@@ -165,12 +216,6 @@ Edit `~/.claude/plugins/ide-memory/.mcp.json` and replace the URL:
     "url": "<MCP_URL>"
   }
 }
-```
-
-**Verify the plugin is installed:**
-
-```bash
-ls ~/.claude/plugins/ide-memory/.claude-plugin/plugin.json
 ```
 
 **What the user gets:**
@@ -361,7 +406,7 @@ If the MCP tools are not available, check:
 
 | IDE | MCP Config | Auto-trigger Mechanism | Source Files |
 |-----|-----------|----------------------|--------------|
-| Claude Code | Plugin `.mcp.json` | Skills (SKILL.md) | `docs/plugin/` |
+| Claude Code | `claude mcp add --scope user` | Plugin skills (SKILL.md) or CLAUDE.md | `docs/plugin/`, `docs/CLAUDE.md` |
 | Cursor | `.cursor/mcp.json` | Rules (`.mdc`, `alwaysApply: true`) | `docs/cursor/` |
 | VS Code | `.vscode/mcp.json` | CLAUDE.md in project root | `docs/CLAUDE.md` |
 | Windsurf | MCP settings | `.windsurfrules` | `docs/CLAUDE.md` |
