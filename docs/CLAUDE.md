@@ -26,6 +26,6 @@ Include the **why**, not just the **what**. Future developers (and future AI age
 
 ## Memory MCP server
 
-- **Endpoint**: `http://localhost:8080/sse`
+- **Endpoint**: `http://localhost:8080/mcp`
 - **Web UI**: `http://localhost:3000`
 - **Tools**: `store_memory`, `fetch_memory`, `archive_memory`, `update_memory`

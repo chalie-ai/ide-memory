@@ -66,21 +66,21 @@ docker inspect --format='{{.State.Health.Status}}' ide-memory
 Keep checking until it reports `healthy`. Then verify:
 
 ```bash
-curl -s http://localhost:8080/sse | head -2
+curl -s http://localhost:8080/mcp | head -2
 ```
 
-You should see `event: endpoint` — this confirms the MCP server is accepting connections.
+You should see a response from the MCP server — this confirms the MCP server is accepting connections.
 
 Set these values for use in Step 2:
 
-- `MCP_URL` = `http://localhost:8080/sse`
+- `MCP_URL` = `http://localhost:8080/mcp`
 - `WEB_URL` = `http://localhost:3000`
 
 ### Option 2: Hosted Setup
 
 Ask the user:
 
-> **What is the URL of your IDE Memory MCP server?** (e.g. `http://memory.internal:8080/sse`)
+> **What is the URL of your IDE Memory MCP server?** (e.g. `http://memory.internal:8080/mcp`)
 
 Verify connectivity:
 
@@ -144,13 +144,13 @@ There are two setup levels. **Quick setup** gives you the MCP tools; **Full plug
 Add the MCP server globally so it's available in all Claude Code sessions:
 
 ```bash
-claude mcp add --scope user --transport sse memory <MCP_URL>
+claude mcp add --scope user --transport http memory <MCP_URL>
 ```
 
 For example, with a local instance:
 
 ```bash
-claude mcp add --scope user --transport sse memory http://localhost:8080/sse
+claude mcp add --scope user --transport http memory http://localhost:8080/mcp
 ```
 
 **Verify it works:**
@@ -201,7 +201,7 @@ Or from the CLI:
 claude plugin install ide-memory@chalie-ai --scope user
 ```
 
-**Step 3 — Update MCP URL** (if using a non-default URL). After plugin installation, the MCP URL in the plugin defaults to `http://localhost:8080/sse`. If the user is connecting to a hosted instance, they need to update the MCP URL. Check where the plugin was installed:
+**Step 3 — Update MCP URL** (if using a non-default URL). After plugin installation, the MCP URL in the plugin defaults to `http://localhost:8080/mcp`. If the user is connecting to a hosted instance, they need to update the MCP URL. Check where the plugin was installed:
 
 ```bash
 cat ~/.claude/plugins/installed_plugins.json
@@ -212,7 +212,7 @@ Find the `installPath` for `ide-memory@chalie-ai` and edit the `.mcp.json` insid
 ```json
 {
   "memory": {
-    "type": "sse",
+    "type": "streamable-http",
     "url": "<MCP_URL>"
   }
 }
@@ -306,7 +306,7 @@ Write `.vscode/mcp.json`:
 {
   "servers": {
     "memory": {
-      "type": "sse",
+      "type": "streamable-http",
       "url": "<MCP_URL>"
     }
   }
@@ -414,7 +414,7 @@ If the MCP tools are not available, check:
 ## Docker Image
 
 - **Image**: `chalieai/ide-memory:latest`
-- **MCP port**: `8080` (SSE transport)
+- **MCP port**: `8080` (streamable-http transport, endpoint `/mcp`)
 - **Web UI port**: `3000`
 - **Data volume**: `/var/lib/postgresql`
 - **Health check**: `curl http://localhost:3000/health`

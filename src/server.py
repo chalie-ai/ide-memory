@@ -279,4 +279,4 @@ async def update_memory(
 
 if __name__ == "__main__":
     logger.info("Starting Institutional Memory MCP server on %s:%s", MCP_HOST, MCP_PORT)
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http")

@@ -19,7 +19,7 @@ case "${1:-start}" in
       --restart unless-stopped \
       "$IMAGE_NAME"
     echo ""
-    echo "  MCP server (agents): http://localhost:${MCP_PORT:-8080}/sse"
+    echo "  MCP server (agents): http://localhost:${MCP_PORT:-8080}/mcp"
     echo "  Web UI (humans):     http://localhost:${WEB_PORT:-3000}"
     echo ""
     ;;

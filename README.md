@@ -18,7 +18,7 @@ docker run -d \
   chalieai/ide-memory:latest
 ```
 
-**MCP server (agents):** `http://localhost:8080/sse`
+**MCP server (agents):** `http://localhost:8080/mcp`
 **Web UI (humans):** `http://localhost:3000`
 
 Or use the helper script:
@@ -37,7 +37,7 @@ cd ide-memory
 Quick setup (MCP connection for all projects):
 
 ```bash
-claude mcp add --scope user --transport sse memory http://localhost:8080/sse
+claude mcp add --scope user --transport http memory http://localhost:8080/mcp
 ```
 
 For the full plugin with auto-triggering skills, see [`docs/SETUP.md`](docs/SETUP.md).
@@ -58,7 +58,8 @@ Add to your MCP config:
 {
   "mcpServers": {
     "memory": {
-      "url": "http://localhost:8080/sse"
+      "type": "streamable-http",
+      "url": "http://localhost:8080/mcp"
     }
   }
 }
@@ -124,7 +125,7 @@ Everything runs in a single container:
 │  ┌─────────────┐   ┌────────────────┐   │
 │  │  MCP Server  │   │    Web UI      │   │
 │  │  (FastMCP)   │   │  (Starlette)   │   │
-│  │  :8080/sse   │   │  :3000         │   │
+│  │  :8080/mcp   │   │  :3000         │   │
 │  └──────┬───────┘   └───────┬────────┘   │
 │         │                   │            │
 │  ┌──────┴───────────────────┴────────┐   │
