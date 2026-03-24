@@ -28,23 +28,19 @@ cd ide-memory
 
 ## Connecting Your IDE
 
-### Claude Code
+### Claude Code (with auto-triggering skills)
 
-Add to your MCP config:
+Install the plugin — Claude will automatically fetch context and store decisions:
 
-```json
-{
-  "mcpServers": {
-    "memory": {
-      "url": "http://localhost:8080/sse"
-    }
-  }
-}
+```bash
+cp -r docs/plugin ~/.claude/plugins/ide-memory
 ```
 
-### Cursor / VS Code (Copilot)
+See [`docs/SETUP.md`](docs/SETUP.md) for the full setup guide including Cursor, VS Code, and Windsurf.
 
-Add to your `.cursor/mcp.json` or equivalent MCP config:
+### MCP-only (any IDE)
+
+Add to your MCP config:
 
 ```json
 {
@@ -251,4 +247,4 @@ Add these secrets to your GitHub repository settings:
 
 ## License
 
-MIT
+Apache 2.0

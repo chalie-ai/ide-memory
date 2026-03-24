@@ -1,0 +1,18 @@
+{
+  "name": "ide-memory",
+  "version": "1.0.0",
+  "description": "Institutional memory for AI-assisted development — automatically stores decisions, fetches context, and builds a shared knowledge base across conversations",
+  "author": {
+    "name": "Chalie AI"
+  },
+  "repository": "https://github.com/chalie-ai/ide-memory",
+  "license": "Apache-2.0",
+  "keywords": [
+    "memory",
+    "institutional-knowledge",
+    "mcp",
+    "context",
+    "decisions",
+    "architecture"
+  ]
+}

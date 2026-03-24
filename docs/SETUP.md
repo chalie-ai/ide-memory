@@ -1,0 +1,163 @@
+# IDE Memory — Setup Guide
+
+## 1. Start the server
+
+```bash
+docker run -d \
+  --name ide-memory \
+  -p 127.0.0.1:8080:8080 \
+  -p 127.0.0.1:3000:3000 \
+  -v memory-pgdata:/var/lib/postgresql \
+  --restart unless-stopped \
+  chalieai/ide-memory:latest
+```
+
+Verify it's running:
+
+```bash
+curl http://localhost:3000/health
+```
+
+## 2. Connect your IDE
+
+### Option A: Install the plugin (recommended)
+
+Copy the `docs/plugin/` directory into your Claude Code plugins directory:
+
+```bash
+cp -r docs/plugin ~/.claude/plugins/ide-memory
+```
+
+This gives you:
+- MCP connection to the memory server
+- **Auto-triggering skills** — Claude will automatically fetch context before tasks and store decisions after significant work, without you having to ask
+
+### Option B: MCP-only (any IDE that supports MCP)
+
+Add to your MCP configuration:
+
+**Claude Code** (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "type": "sse",
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+**VS Code Copilot** (`.vscode/mcp.json`):
+
+```json
+{
+  "servers": {
+    "memory": {
+      "type": "sse",
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+**Windsurf** (`.windsurfrules` or MCP settings):
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "url": "http://localhost:8080/sse"
+    }
+  }
+}
+```
+
+This gives you the MCP tools but **not** the auto-triggering skills. The LLM will have access to the tools but won't automatically use them unless prompted.
+
+## 3. Make the LLM use memory automatically
+
+### With the plugin (Option A)
+
+The plugin includes two skills with aggressive trigger descriptions. Claude will:
+- **Fetch memory** before starting tasks, investigating bugs, making decisions, reviewing code
+- **Store memory** after decisions, architectural changes, incidents, commits with significant changes
+
+No additional setup needed — the skills trigger automatically based on conversation context.
+
+### Without the plugin (Option B)
+
+Drop the `docs/CLAUDE.md` template into your project root:
+
+```bash
+cp docs/CLAUDE.md /path/to/your/project/CLAUDE.md
+```
+
+Edit the file to replace `<this-project>` with your project name. Claude Code reads `CLAUDE.md` at the start of every session and will follow the instructions to fetch and store memory.
+
+For other IDEs, add equivalent instructions to your system prompt or rules file (`.cursorrules`, `.windsurfrules`, etc.).
+
+## 4. Verify it works
+
+Open your IDE and start a conversation. With the plugin installed, Claude should automatically call `fetch_memory` early in the conversation. You can also test manually:
+
+> "What decisions have been stored about this project?"
+
+Or explicitly:
+
+> "Store a test memory: We decided to use PostgreSQL for the user service because we need ACID transactions."
+
+Then check the web UI at `http://localhost:3000` to see it appear.
+
+## Configuration
+
+All settings are configurable via environment variables passed to `docker run`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_PORT` | `8080` | MCP server port |
+| `WEB_PORT` | `3000` | Web UI port |
+| `POOL_MIN` | `5` | Min DB connection pool size |
+| `POOL_MAX` | `20` | Max DB connection pool size |
+| `CHUNK_SIZE` | `1200` | Text chunk size in characters |
+| `CHUNK_OVERLAP` | `200` | Overlap between chunks |
+| `PG_SHARED_BUFFERS` | `256MB` | PostgreSQL shared_buffers |
+| `PG_WORK_MEM` | `16MB` | PostgreSQL work_mem |
+
+## Backups
+
+Automated backups run on startup and hourly inside the container. Manual backup/restore:
+
+```bash
+# Create backup
+docker exec ide-memory /app/scripts/backup.sh backup
+
+# List backups
+docker exec ide-memory /app/scripts/backup.sh list
+
+# Restore
+docker exec ide-memory /app/scripts/backup.sh restore /app/backups/<file>.dump
+```
+
+## Troubleshooting
+
+**Container won't start**: Check if ports 8080/3000 are already in use: `lsof -i :8080`
+
+**MCP connection fails**: Ensure the container is healthy: `docker inspect --format='{{.State.Health.Status}}' ide-memory`
+
+**Search is slow on first query**: The embedding model loads on first use (~10-30s). Subsequent queries are fast.
+
+**Skills not triggering**: Verify the plugin is installed: `ls ~/.claude/plugins/ide-memory/.claude-plugin/plugin.json`
