@@ -2,6 +2,10 @@
 
 Institutional memory system for AI-assisted development environments. A single Docker container runs PostgreSQL with pgvector, an MCP server for AI agent tool use, and a web UI for browsing — giving your team a shared, searchable knowledge base that persists across conversations and IDE sessions.
 
+## Agent Setup
+
+**Point your AI agent to [`docs/FOR_AGENTS.md`](docs/FOR_AGENTS.md)** — it contains step-by-step instructions your agent can follow to set everything up automatically. It will detect your IDE, pull the Docker image, install the right plugin/rules, and verify the connection with minimal input from you.
+
 ## Quick Start
 
 ```bash
