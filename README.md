@@ -58,7 +58,7 @@ Add to your MCP config:
 {
   "mcpServers": {
     "memory": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "http://localhost:8080/mcp"
     }
   }

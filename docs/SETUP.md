@@ -101,7 +101,7 @@ Or for a single project, create `.mcp.json` in the project root:
 ```json
 {
   "memory": {
-    "type": "streamable-http",
+    "type": "http",
     "url": "http://localhost:8080/mcp"
   }
 }
@@ -125,7 +125,7 @@ Or for a single project, create `.mcp.json` in the project root:
 {
   "servers": {
     "memory": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "http://localhost:8080/mcp"
     }
   }

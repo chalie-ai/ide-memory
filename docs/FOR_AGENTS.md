@@ -212,7 +212,7 @@ Find the `installPath` for `ide-memory@chalie-ai` and edit the `.mcp.json` insid
 ```json
 {
   "memory": {
-    "type": "streamable-http",
+    "type": "http",
     "url": "<MCP_URL>"
   }
 }
@@ -306,7 +306,7 @@ Write `.vscode/mcp.json`:
 {
   "servers": {
     "memory": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "<MCP_URL>"
     }
   }
@@ -414,7 +414,7 @@ If the MCP tools are not available, check:
 ## Docker Image
 
 - **Image**: `chalieai/ide-memory:latest`
-- **MCP port**: `8080` (streamable-http transport, endpoint `/mcp`)
+- **MCP port**: `8080` (http transport, endpoint `/mcp`)
 - **Web UI port**: `3000`
 - **Data volume**: `/var/lib/postgresql`
 - **Health check**: `curl http://localhost:3000/health`
