@@ -251,13 +251,6 @@ git push origin v1.0.0
 
 The CI workflow automatically builds multi-platform images (amd64 + arm64) and pushes to Docker Hub as `chalieai/ide-memory:vX.X.X` and `chalieai/ide-memory:latest`.
 
-### Docker Hub Setup
-
-Add these secrets to your GitHub repository settings:
-
-- `DOCKERHUB_USERNAME` — your Docker Hub username
-- `DOCKERHUB_TOKEN` — a Docker Hub access token
-
 ## License
 
 Apache 2.0
